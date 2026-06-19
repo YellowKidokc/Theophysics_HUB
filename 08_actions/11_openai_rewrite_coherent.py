@@ -1,4 +1,4 @@
-def process(data):
+def process(data: dict) -> str:
     import json
     import os
     import urllib.request
@@ -14,7 +14,7 @@ def process(data):
     env_name = openai_cfg.get("api_key_env", "OPENAI_API_KEY")
     api_key = os.getenv(env_name, "").strip()
     if not api_key:
-        return f"Missing API key. Set environment variable {env_name}."
+        raise RuntimeError(f"Missing API key. Set environment variable {env_name}.")
 
     instruction = openai_cfg.get(
         "rewrite_instruction",
@@ -50,7 +50,7 @@ def process(data):
         with urllib.request.urlopen(req, timeout=60) as resp:
             body = json.loads(resp.read().decode("utf-8"))
     except Exception as e:
-        return f"OpenAI request failed: {e}"
+        raise RuntimeError(f"OpenAI request failed: {e}") from e
 
     if isinstance(body.get("output_text"), str) and body["output_text"].strip():
         return body["output_text"].strip()
