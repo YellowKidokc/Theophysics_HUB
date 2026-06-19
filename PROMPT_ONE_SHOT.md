@@ -1,102 +1,103 @@
-# Stratum One-Shot Build Prompt
+# Theophysics HUB Aggressive One-Shot Build Prompt
 
-You are taking over a Windows desktop productivity app scaffold at `D:\GitHub\stratum`.
+You are building inside the repo `D:\GitHub\Theophysics_HUB`.
 
-Your job is to turn this scaffold into the first coherent working version of the app, not to brainstorm endlessly.
+Act like a senior Windows desktop app engineer. Take the current scaffold and turn it into the first coherent working Windows app version. Do not redesign the architecture. Implement against what is already there. Make real file changes.
+
+## Core Goal
+
+Build a Windows-first productivity hub with these working triggers:
+
+- `Ctrl+Alt+G` opens the main GUI
+- `Ctrl+Alt+C` opens Clipboard
+- `Ctrl+Alt+P` opens Prompts
+- `Ctrl+Alt+L` opens Links
+- `Ctrl+Alt+T` opens TTS
+- `Ctrl+Space` captures selected text or clipboard text, sends it to OpenAI, and returns rewritten coherent text with punctuation, capitalization, spelling, and sentence cleanup
+- Middle mouse button opens the action popup
 
 ## Non-Negotiable Architecture
 
-- `07_ahk/` stays in the project.
-- `AHK` is the Windows-native glue for:
-  - global hotkeys
-  - mouse middle-button trigger
-  - selection-trigger workflows
-- `Python` is the backend brain for:
-  - action registry
-  - clipboard and selection processing
-  - AI/provider integration
-  - engine preferences
-  - persistence
-- `PySide6` is the desktop shell for:
-  - tray icon
-  - popup windows
-  - embedded web UI if needed
-  - lifecycle management
-- `React` is the preferred long-term front-end for settings/dashboard/panel UIs
+Keep this architecture:
 
-Do not remove `AHK` and do not replace it with a pure browser or pure Python keyboard-hook solution unless you can prove a Windows-native alternative is more reliable.
+- `07_ahk/` = Windows-native glue for hotkeys, mouse triggers, and selection workflows
+- `01_core/` = backend brain for registries, action running, clipboard/selection payloads, logging, provider config, and engine paths
+- `03_ui_python/` = PySide6 shell, popup, tray, and first working desktop GUI
+- `02_ui_react/` = future React frontend; preserve it, but do not depend on it for the first working slice unless already necessary
+- `04_config/` = source-of-truth JSON config
+- `08_actions/` = TextGO-style action scripts
 
-## Current Repo State
+Do not remove AHK. Do not convert this into a browser-only app. Do not replace Windows-native triggers with web workarounds.
 
-This repo is a scaffold, not a finished app.
+## Existing Repo State
 
-Existing structure:
+The repo already contains:
 
-- `00_app_shell/`
-- `01_core/`
-- `02_ui_react/`
-- `03_ui_python/`
-- `04_config/`
-- `05_logs/`
-- `06_engines/`
-- `07_ahk/`
-- `08_actions/`
+- scaffold folders `00_app_shell` through `08_actions`
+- action loader/registry stubs in `01_core`
+- PySide stubs in `03_ui_python`
+- AHK stub in `07_ahk/Stratum.ahk`
+- action files in `08_actions`
+- config in `04_config`
+- OpenAI rewrite action in `08_actions/11_openai_rewrite_coherent.py`
+- hotkey config entries for `Ctrl+Alt+G`, `Ctrl+Alt+C`, `Ctrl+Alt+P`, `Ctrl+Alt+L`, `Ctrl+Alt+T`, and `Ctrl+Space`
 
-Already present:
+## Immediate Deliverable
 
-- action files in `08_actions/`
-- action definitions in `04_config/actions.json`
-- stub registries in `01_core/`
-- stub AHK glue in `07_ahk/Stratum.ahk`
-- placeholder React files in `02_ui_react/src/`
-- placeholder PySide files in `03_ui_python/`
+Implement the first real end-to-end version of:
 
-## Product Direction
+1. AHK trigger layer
+2. selection/clipboard capture
+3. Python action runner
+4. PySide popup
+5. OpenAI rewrite flow
+6. main GUI launcher
+7. logging
 
-This app is a panel-first Windows system with these major tools:
+Focus on building the first real working slice, not on discussing options endlessly.
 
-1. Clipboard
-2. Prompt Picker
-3. Research Links
-4. TTS
-5. Middle-click action popup
+## Required Behaviors
 
-The UI style should be:
+### A. Main GUI
 
-- dark
-- compact
-- intentional
-- not generic SaaS dashboard styling
-- comfortable with mono-heavy typography
+`Ctrl+Alt+G` should open the main GUI window. A PySide6-hosted window is enough for now, but it must be a real window, not a placeholder print or message box.
 
-## Immediate Build Goal
+### B. Rewrite / Spell Check
 
-Build the first working slice around the action popup and backend integration.
+`Ctrl+Space` should:
 
-That means:
+1. capture selected text if possible
+2. otherwise use clipboard text
+3. run `rewrite_coherent_openai`
+4. return rewritten text
+5. either replace the selected text in place or copy the rewritten text back to clipboard and show it clearly in a popup
 
-1. Implement a real action registry that loads `04_config/actions.json`
-2. Implement a real runner that imports action modules from `08_actions/`
-3. Implement a selection/clipboard payload flow
-4. Implement a PySide6 popup window that:
-   - appears on command
-   - shows the current selected text or clipboard text
-   - lists available actions
-   - runs the chosen action
-   - shows the result
-   - supports copy result
-5. Implement `AHK` glue so middle mouse button can trigger the popup
+This is intended to function as a serious dictation cleanup / spell-check / punctuation fixer.
 
-## Action Interface
+### C. Action Popup
 
-Each action file exposes:
+Middle mouse button should trigger a popup that:
+
+- previews selected text
+- lists available actions from `04_config/actions.json`
+- runs the selected action
+- shows the result
+- supports copying the result
+
+### D. Logging
+
+Log action runs and failures into `05_logs/actions.log`.
+
+## Existing Action Contract
+
+Each action in `08_actions` exposes:
 
 ```python
 def process(data: dict) -> str:
     ...
 ```
 
-The `data` payload should support at least:
+Payloads should support:
 
 ```python
 {
@@ -107,9 +108,7 @@ The `data` payload should support at least:
 }
 ```
 
-## Important Existing Actions
-
-Priority actions already present:
+## Important Actions Already Present
 
 - `02_clean_dictation.py`
 - `03_overclaim_detector.py`
@@ -117,76 +116,55 @@ Priority actions already present:
 - `06_full_audit.py`
 - `07_markov_chain.py`
 - `08_motif_scan.py`
+- `11_openai_rewrite_coherent.py`
 
-Additional placeholder actions:
+## OpenAI Requirements
 
-- `01_stt.py`
-- `04_grammar_fix.py`
-- `09_adversarial_check.py`
-- `10_kimi_chat.py`
+There is already config for OpenAI in `04_config/config.json`.
 
-## Behavior Requirements
+Use:
 
-The first working version should support:
+- API key environment variable name from config
+- model from config
+- rewrite instruction from config
 
-- launch popup from `AHK`
-- run at least one action end-to-end
-- support selected text if available, otherwise clipboard
-- log executions to `05_logs/actions.log`
-- fail clearly, not silently
+Do not hardcode the API key. Do not move the key into source code. If the API key is missing, fail clearly and visibly in the popup and logs.
 
-## Clipboard Model
+Use the current OpenAI Responses API shape. Keep the OpenAI call isolated in the action or a small provider helper so it can be swapped later.
 
-The system is expected to support many numbered clipboard slots.
+## Clipboard / Prompt / Links Direction
 
-Current design intent:
+Do not fully rebuild all panels yet. Wire enough of the shell so the architecture is real and launcher structure is correct.
 
-- 75 clipboard slots
-- future focused-panel slot entry via `Ctrl+Alt` + digits + `Enter`
-- persistent storage later
+Clipboard direction:
 
-Do not try to fully solve every clipboard feature first. Get the popup/action path working first.
+- support 75 slots as a model
+- do not over-engineer all slot behavior yet
+- make sure the system design does not block the 75-slot plan
 
-## Engine Paths
+## Engine Direction
 
-The engine NAS targets are documented in:
+Do not assume NAS engine links already exist. Use the documented paths in:
 
 - `01_core/engine_registry.py`
 - `06_engines/create_engine_links.cmd`
 
-Do not assume those links already exist locally.
+## Coding Requirements
 
-## Implementation Priorities
+- Favor direct local coordination over unnecessary HTTP unless there is a strong reason
+- Keep the code simple and maintainable
+- Use Windows-first assumptions
+- Implement real files, not just comments or pseudo-code
+- Preserve the current repo shape for later React migration
+- Do not add secrets to source control
+- Fail clearly rather than silently
 
-Priority order:
+## Deliverables Summary
 
-1. `01_core/action_registry.py`
-2. `01_core/clipboard_manager.py`
-3. `03_ui_python/action_popup.py`
-4. `03_ui_python/api_server.py` if needed
-5. `07_ahk/Stratum.ahk`
-6. lifecycle/bootstrap polish
+When finished, provide:
 
-## Constraints
-
-- Keep code simple and local-first.
-- Prefer direct local coordination over unnecessary network layers.
-- Do not invent a cloud dependency just to connect AHK to Python.
-- Do not remove folders from the current repo shape.
-- Do not turn this into a web-only app.
-- Preserve Windows-first assumptions.
-
-## Deliverable
-
-Produce a first runnable local version where:
-
-- user triggers the popup
-- popup loads actions
-- popup runs an action on selected text or clipboard text
-- result is visible and copyable
-
-When done, summarize:
-
-- what files were implemented
-- how to run it
-- what still remains unfinished
+1. files implemented
+2. how to run locally
+3. what hotkeys now work
+4. what remains unfinished
+5. test/check commands run
