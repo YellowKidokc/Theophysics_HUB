@@ -1,0 +1,17 @@
+{
+  "app_name": "Stratum",
+  "ui_mode": "panel",
+  "hotkeys": {
+    "clipboard": "Ctrl+Alt+C",
+    "prompts": "Ctrl+Alt+P",
+    "links": "Ctrl+Alt+L",
+    "tts": "Ctrl+Alt+T",
+    "gui": "Ctrl+Alt+G",
+    "rewrite": "Ctrl+Space"
+  },
+  "openai": {
+    "model": "gpt-4.1-mini",
+    "api_key_env": "OPENAI_API_KEY",
+    "rewrite_instruction": "Rewrite this text into coherent prose with corrected punctuation, sentence boundaries, capitalization, and spelling. Preserve meaning. Do not add new claims or extra content."
+  }
+}

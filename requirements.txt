@@ -1,0 +1,3 @@
+fastapi
+pyside6
+uvicorn

@@ -1,0 +1,7 @@
+[
+  {
+    "name": "Rewrite Coherent",
+    "content": "Rewrite this text into coherent prose with corrected punctuation, sentence boundaries, capitalization, and spelling. Preserve meaning. Do not add new claims or extra content.\n\n{text}",
+    "hotkey": "Ctrl+Space"
+  }
+]

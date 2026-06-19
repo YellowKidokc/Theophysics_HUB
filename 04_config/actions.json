@@ -1,0 +1,44 @@
+[
+  {
+    "id": "clean_dictation",
+    "name": "Clean Dictation",
+    "entry": "08_actions/02_clean_dictation.py",
+    "description": "Light dictation cleanup."
+  },
+  {
+    "id": "overclaim_detector",
+    "name": "Overclaim Detector",
+    "entry": "08_actions/03_overclaim_detector.py",
+    "description": "Flags strong certainty wording."
+  },
+  {
+    "id": "rephrase_5_ways",
+    "name": "Rephrase 5 Ways",
+    "entry": "08_actions/05_rephrase_5_ways.py",
+    "description": "Calls local Ollama Mistral."
+  },
+  {
+    "id": "full_audit",
+    "name": "Full Audit",
+    "entry": "08_actions/06_full_audit.py",
+    "description": "Runs the shared writing audit."
+  },
+  {
+    "id": "markov_chain",
+    "name": "Markov Chain",
+    "entry": "08_actions/07_markov_chain.py",
+    "description": "Generates from the P07 engine."
+  },
+  {
+    "id": "motif_scan",
+    "name": "Motif Scan",
+    "entry": "08_actions/08_motif_scan.py",
+    "description": "Counts motifs and repeated bigrams."
+  },
+  {
+    "id": "rewrite_coherent_openai",
+    "name": "Rewrite Coherent",
+    "entry": "08_actions/11_openai_rewrite_coherent.py",
+    "description": "Uses OpenAI to rewrite selected text into coherent punctuated prose."
+  }
+]

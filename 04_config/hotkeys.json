@@ -1,0 +1,26 @@
+[
+  {
+    "keys": "Ctrl+Alt+C",
+    "action": "open_clipboard"
+  },
+  {
+    "keys": "Ctrl+Alt+P",
+    "action": "open_prompts"
+  },
+  {
+    "keys": "Ctrl+Alt+L",
+    "action": "open_links"
+  },
+  {
+    "keys": "Ctrl+Alt+T",
+    "action": "open_tts"
+  },
+  {
+    "keys": "Ctrl+Alt+G",
+    "action": "open_gui"
+  },
+  {
+    "keys": "Ctrl+Space",
+    "action": "rewrite_coherent_openai"
+  }
+]
