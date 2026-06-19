@@ -4,8 +4,7 @@ from lifecycle import start_app
 
 def main() -> int:
     ensure_startup_shortcut()
-    start_app()
-    return 0
+    return start_app()
 
 
 if __name__ == "__main__":
