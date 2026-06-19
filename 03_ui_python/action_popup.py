@@ -19,10 +19,15 @@ class ActionPopup:
         self.window.resize(760, 560)
 
         layout = QtWidgets.QVBoxLayout(self.window)
+        layout.addWidget(QtWidgets.QLabel("Selected text / clipboard preview"))
         self.preview = QtWidgets.QPlainTextEdit()
         self.preview.setPlaceholderText("Selected text or clipboard preview")
         self.preview.setMaximumHeight(130)
+
+        layout.addWidget(QtWidgets.QLabel("Configured actions"))
         self.actions = QtWidgets.QListWidget()
+
+        self.status = QtWidgets.QLabel("Ready")
         self.result = QtWidgets.QPlainTextEdit()
         self.result.setPlaceholderText("Action result")
         self.run_button = QtWidgets.QPushButton("Run Action")
@@ -34,6 +39,7 @@ class ActionPopup:
         layout.addWidget(self.preview)
         layout.addWidget(self.actions)
         layout.addLayout(buttons)
+        layout.addWidget(self.status)
         layout.addWidget(self.result)
 
         self._payload: dict[str, Any] = {}
@@ -42,9 +48,11 @@ class ActionPopup:
         self.copy_button.clicked.connect(self.copy_result)
 
     def load(self, payload: dict[str, Any]) -> None:
-        self._payload = payload
-        text = payload.get("selection") or payload.get("clipboard") or ""
+        self._payload = dict(payload)
+        text = self._payload.get("selection") or self._payload.get("clipboard") or ""
         self.preview.setPlainText(text)
+        self.result.clear()
+        self.status.setText("Ready")
         self.actions.clear()
         self._records = self.registry.list_actions()
         for record in self._records:
@@ -60,14 +68,28 @@ class ActionPopup:
     def run_selected_action(self) -> None:
         row = self.actions.currentRow()
         if row < 0 or row >= len(self._records):
-            self.result.setPlainText("Select an action first.")
+            self.status.setText("Select an action first.")
             return
         record = self._records[row]
-        result = self.registry.run(record.id, self._payload)
-        self.result.setPlainText(result.output if result.ok else f"Action failed: {result.error}")
+        self.status.setText(f"Running {record.name}...")
+        self.run_button.setEnabled(False)
+        try:
+            result = self.registry.run(record.id, self._payload)
+        finally:
+            self.run_button.setEnabled(True)
+        if result.ok:
+            self.status.setText(f"Completed {record.name}.")
+            self.result.setPlainText(result.output)
+        else:
+            self.status.setText(f"{record.name} failed.")
+            self.result.setPlainText(f"Action failed: {result.error}")
 
     def copy_result(self) -> None:
-        self.clipboard_manager.set_clipboard_text(self.result.toPlainText())
+        try:
+            self.clipboard_manager.set_clipboard_text(self.result.toPlainText())
+            self.status.setText("Result copied to clipboard.")
+        except Exception as exc:
+            self.status.setText(f"Copy failed: {exc}")
 
 
 class MainShellWindow:
@@ -83,13 +105,19 @@ class MainShellWindow:
         layout = QtWidgets.QVBoxLayout(central)
         title = QtWidgets.QLabel("Theophysics HUB")
         title.setStyleSheet("font-size: 24px; font-weight: 700;")
-        subtitle = QtWidgets.QLabel("Windows-first action hub: clipboard, prompts, links, TTS, and rewrite tools.")
-        paths = QtWidgets.QPlainTextEdit()
-        paths.setReadOnly(True)
-        paths.setPlainText(f"Repo: {root}\nConfig: {root / '04_config'}\nLogs: {root / '05_logs'}")
+        subtitle = QtWidgets.QLabel("Windows-first action hub for selected text, clipboard rewrites, and configured tools.")
+        hotkeys = QtWidgets.QPlainTextEdit()
+        hotkeys.setReadOnly(True)
+        hotkeys.setPlainText(
+            "Hotkeys\n"
+            "Ctrl+Alt+G: open/focus this GUI\n"
+            "Ctrl+Space: rewrite selected/clipboard text with OpenAI\n"
+            "Middle Mouse: open action popup\n\n"
+            f"Repo: {root}\nConfig: {root / '04_config'}\nLogs: {root / '05_logs'}"
+        )
         layout.addWidget(title)
         layout.addWidget(subtitle)
-        layout.addWidget(paths)
+        layout.addWidget(hotkeys)
         self.window.setCentralWidget(central)
 
     def show(self) -> None:
