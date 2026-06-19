@@ -8,9 +8,14 @@ RepoRoot := "D:\GitHub\Theophysics_HUB"
 Pythonw := "pythonw.exe"
 Python := "python.exe"
 Cli := RepoRoot "\00_app_shell\stratum_cli.py"
+GuiTitle := "Theophysics HUB"
 
 RunGui() {
-    global Pythonw, Cli, RepoRoot
+    global Pythonw, Cli, RepoRoot, GuiTitle
+    if WinExist(GuiTitle) {
+        WinActivate(GuiTitle)
+        return
+    }
     Run('"' Pythonw '" "' Cli '" gui', RepoRoot)
 }
 
@@ -37,9 +42,5 @@ CaptureSelectionToClipboard() {
 }
 
 ^!g::RunGui()
-^!c::RunGui()
-^!p::RunGui()
-^!l::RunGui()
-^!t::RunGui()
 ^Space::RunRewrite()
 MButton::RunPopup()
