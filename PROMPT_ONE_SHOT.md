@@ -159,6 +159,18 @@ Do not assume NAS engine links already exist. Use the documented paths in:
 - Do not add secrets to source control
 - Fail clearly rather than silently
 
+## Do Not Drift Into Demo Code
+
+Do not turn this into a tiny popup tutorial or a standalone Tkinter demo app.
+
+Avoid:
+
+- single-file “automatic popup window” implementations
+- generic reminder/alert windows with no action system
+- replacing the repo architecture with a toy script
+
+Build against the existing AHK + Python + PySide6 + config-driven structure.
+
 ## Deliverables Summary
 
 When finished, provide:

@@ -174,6 +174,21 @@ Do not spam logs with noise.
 - Do not touch unrelated files
 - Ignore `02_ui_react/node_modules/`
 
+## Anti-Pattern Warning
+
+Do not downgrade this project into a toy popup demo.
+
+Specifically, do not:
+
+- replace the architecture with a tiny standalone Tkinter reminder script
+- build a one-file popup example with no real backend separation
+- treat the action popup as a generic message-box demo
+- ignore the existing config/action/hotkey structure
+
+If you use Tkinter at all, it must be because you can justify it against the current PySide6-oriented shell plan. Otherwise stay aligned with the existing desktop architecture.
+
+This project is a real Windows productivity hub, not a beginner popup-window tutorial.
+
 ## Deliverable
 
 When finished, provide:
