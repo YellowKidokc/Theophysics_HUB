@@ -1,8 +1,7 @@
-"""PySide6 action popup and main shell windows."""
+"""PySide6 action popup triggered by the middle-mouse button."""
 
 from __future__ import annotations
 
-from pathlib import Path
 from typing import Any
 
 
@@ -92,35 +91,3 @@ class ActionPopup:
             self.status.setText(f"Copy failed: {exc}")
 
 
-class MainShellWindow:
-    """Small PySide6 shell that proves the desktop app has a real GUI surface."""
-
-    def __init__(self, root: Path):
-        from PySide6 import QtWidgets
-
-        self.window = QtWidgets.QMainWindow()
-        self.window.setWindowTitle("Theophysics HUB")
-        self.window.resize(900, 620)
-        central = QtWidgets.QWidget()
-        layout = QtWidgets.QVBoxLayout(central)
-        title = QtWidgets.QLabel("Theophysics HUB")
-        title.setStyleSheet("font-size: 24px; font-weight: 700;")
-        subtitle = QtWidgets.QLabel("Windows-first action hub for selected text, clipboard rewrites, and configured tools.")
-        hotkeys = QtWidgets.QPlainTextEdit()
-        hotkeys.setReadOnly(True)
-        hotkeys.setPlainText(
-            "Hotkeys\n"
-            "Ctrl+Alt+G: open/focus this GUI\n"
-            "Ctrl+Space: rewrite selected/clipboard text with OpenAI\n"
-            "Middle Mouse: open action popup\n\n"
-            f"Repo: {root}\nConfig: {root / '04_config'}\nLogs: {root / '05_logs'}"
-        )
-        layout.addWidget(title)
-        layout.addWidget(subtitle)
-        layout.addWidget(hotkeys)
-        self.window.setCentralWidget(central)
-
-    def show(self) -> None:
-        self.window.show()
-        self.window.raise_()
-        self.window.activateWindow()

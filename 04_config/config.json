@@ -1,6 +1,7 @@
 {
   "app_name": "Stratum",
   "ui_mode": "panel",
+  "panels": ["dashboard", "clipboard", "prompts", "links", "tts"],
   "hotkeys": {
     "clipboard": "Ctrl+Alt+C",
     "prompts": "Ctrl+Alt+P",
@@ -8,6 +9,14 @@
     "tts": "Ctrl+Alt+T",
     "gui": "Ctrl+Alt+G",
     "rewrite": "Ctrl+Space"
+  },
+  "clipboard": {
+    "slots": 75,
+    "store_file": "05_logs/clipboard_slots.json"
+  },
+  "tts": {
+    "voice": "",
+    "rate": 0
   },
   "openai": {
     "model": "gpt-4.1-mini",

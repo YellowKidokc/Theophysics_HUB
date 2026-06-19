@@ -1,0 +1,17 @@
+[
+  {
+    "label": "OpenAI Platform",
+    "url": "https://platform.openai.com",
+    "category": "AI"
+  },
+  {
+    "label": "OpenAI API Reference",
+    "url": "https://platform.openai.com/docs/api-reference/responses",
+    "category": "AI"
+  },
+  {
+    "label": "Theophysics HUB Repo",
+    "url": "https://github.com/YellowKidokc/Theophysics_HUB",
+    "category": "Project"
+  }
+]

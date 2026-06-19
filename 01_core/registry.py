@@ -1,26 +1,29 @@
-import json
+"""Content registry that feeds the shell's panels.
+
+This is deliberately separate from :class:`action_registry.ActionRegistry`:
+that registry *executes* code, while this one only loads declarative content
+(prompts, links, hotkeys) into typed records for display. Keeping the two
+apart preserves a clear boundary between "things we run" and "things we show".
+"""
+
+from __future__ import annotations
+
 from pathlib import Path
 
-from models import ActionRecord, AppState, HotkeyRecord, PromptRecord
+from config_loader import ConfigLoader
+from models import AppState, HotkeyRecord, LinkRecord, PromptRecord
 
 
 class Registry:
-    def __init__(self, root: Path):
-        self.root = root
-        self.config_dir = root / "04_config"
-        self.state = AppState()
+    """Loads prompts, links, and hotkeys from ``04_config`` into an ``AppState``."""
+
+    def __init__(self, root: Path, config: ConfigLoader | None = None):
+        self.root = root.resolve()
+        self.config = config or ConfigLoader(self.root)
 
     def load(self) -> AppState:
-        prompts = self._read_json("prompts.json", [])
-        hotkeys = self._read_json("hotkeys.json", [])
-        actions = self._read_json("actions.json", [])
-        self.state.prompts = [PromptRecord(**item) for item in prompts]
-        self.state.hotkeys = [HotkeyRecord(**item) for item in hotkeys]
-        self.state.actions = [ActionRecord(**item) for item in actions]
-        return self.state
-
-    def _read_json(self, name: str, default):
-        path = self.config_dir / name
-        if not path.exists():
-            return default
-        return json.loads(path.read_text(encoding="utf-8"))
+        prompts = [PromptRecord.from_config(item) for item in self.config.prompts_config()]
+        links = [LinkRecord.from_config(item) for item in self.config.links_config()]
+        hotkeys = [HotkeyRecord.from_config(item) for item in self.config.hotkeys_config()]
+        meta = {"app_name": self.config.app_config().get("app_name", "Stratum")}
+        return AppState(prompts=prompts, links=links, hotkeys=hotkeys, meta=meta)
