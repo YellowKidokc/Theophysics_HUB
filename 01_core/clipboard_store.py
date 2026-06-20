@@ -67,6 +67,41 @@ class ClipboardStore:
                 return slot.index
         return None
 
+    def ranked_slots(self) -> list[dict[str, object]]:
+        """Return non-empty slots ranked by lightweight learned-preference signals.
+
+        Ranking is intentionally deterministic and available from day one: a
+        Markov-style keyword/content score dominates at first, while timestamp
+        recency acts as a tie-breaker. The result shape is API-friendly so a
+        future SQLite preference/River model can add scores without changing
+        callers.
+        """
+        ranked = []
+        for slot in self._slots:
+            if slot.is_empty:
+                continue
+            markov_score = _markov_keyword_score(slot.text)
+            recency_score = _timestamp_score(slot.timestamp)
+            preference_score = 0.0
+            river_score = 0.0
+            total_score = (0.7 * markov_score) + (0.2 * recency_score) + (0.1 * preference_score) + river_score
+            ranked.append(
+                {
+                    "index": slot.index,
+                    "text": slot.text,
+                    "timestamp": slot.timestamp,
+                    "preview": slot.preview(),
+                    "score": round(total_score, 4),
+                    "scores": {
+                        "markov": round(markov_score, 4),
+                        "preference": preference_score,
+                        "river": river_score,
+                        "recency": round(recency_score, 4),
+                    },
+                }
+            )
+        return sorted(ranked, key=lambda item: (item["score"], item["timestamp"]), reverse=True)
+
     # -- persistence --------------------------------------------------------
     def load(self) -> None:
         if not self.store_path.exists():
@@ -116,3 +151,31 @@ def _atomic_write(path: Path, text: str) -> None:
     finally:
         if os.path.exists(tmp_name):
             os.remove(tmp_name)
+
+
+def _markov_keyword_score(text: str) -> float:
+    """Cheap day-one relevance score based on repeated tokens and action words."""
+    words = [word.strip(".,;:!?()[]{}\"'’“”").lower() for word in text.split()]
+    words = [word for word in words if len(word) > 2]
+    if not words:
+        return 0.0
+    counts: dict[str, int] = {}
+    for word in words:
+        counts[word] = counts.get(word, 0) + 1
+    repeated = sum(count - 1 for count in counts.values() if count > 1)
+    action_terms = {"todo", "fix", "build", "ship", "test", "prompt", "api", "clip", "rewrite"}
+    action_hits = sum(1 for word in words if word in action_terms)
+    return min(1.0, (repeated / max(len(words), 1)) + (action_hits * 0.08) + min(len(words), 200) / 1000)
+
+
+def _timestamp_score(timestamp: str) -> float:
+    if not timestamp:
+        return 0.0
+    try:
+        when = dt.datetime.fromisoformat(timestamp)
+        if when.tzinfo is None:
+            when = when.replace(tzinfo=dt.timezone.utc)
+    except ValueError:
+        return 0.0
+    age_hours = max((dt.datetime.now(dt.timezone.utc) - when).total_seconds() / 3600, 0)
+    return max(0.0, 1.0 - min(age_hours / (24 * 30), 1.0))
