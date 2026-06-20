@@ -40,5 +40,23 @@
     "name": "Rewrite Coherent",
     "entry": "08_actions/11_openai_rewrite_coherent.py",
     "description": "Uses OpenAI to rewrite selected text into coherent punctuated prose."
+  },
+  {
+    "id": "compress",
+    "name": "Compress",
+    "entry": "08_actions/12_compress.py",
+    "description": "Compresses selected text into a shorter version."
+  },
+  {
+    "id": "grammar_fix",
+    "name": "Fix Grammar",
+    "entry": "08_actions/04_grammar_fix.py",
+    "description": "Fixes grammar and punctuation."
+  },
+  {
+    "id": "chi_classify",
+    "name": "Chi Classify",
+    "entry": "08_actions/13_chi_classify.py",
+    "description": "Classifies selected text into a chi channel."
   }
 ]

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-import importlib.util
+import ast
 import json
 import os
 import platform
@@ -20,6 +20,10 @@ from pydantic import BaseModel
 ROOT = Path(__file__).resolve().parents[1]
 CONFIG_DIR = ROOT / "04_config"
 HTML_DIR = ROOT / "02_ui_html"
+sys.path.insert(0, str(ROOT / "01_core"))
+
+from action_registry import ActionRegistry
+from clipboard_store import ClipboardStore
 SETTINGS_FILES = {
     "actions": CONFIG_DIR / "actions.json",
     "config": CONFIG_DIR / "config.json",
@@ -38,6 +42,12 @@ class RewriteRequest(BaseModel):
 
 class TTSRequest(BaseModel):
     text: str = ""
+
+
+class ActionRequest(BaseModel):
+    text: str = ""
+    selection: str | None = None
+    clipboard: str | None = None
 
 
 def _read_json(path: Path) -> Any:
@@ -64,17 +74,22 @@ def _clipboard_text() -> str:
     return os.environ.get("THEOPHYSICS_CLIPBOARD", "")
 
 
-def _run_action(entry: str, text: str) -> str:
-    path = ROOT / entry
-    spec = importlib.util.spec_from_file_location(f"api_action_{path.stem}", path)
-    if spec is None or spec.loader is None:
-        raise RuntimeError(f"Cannot import action module: {entry}")
-    mod = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(mod)
-    processor = getattr(mod, "process", None)
-    if not callable(processor):
-        raise RuntimeError(f"Action does not expose process(data): {entry}")
-    return str(processor({"selection": text, "clipboard": text, "trigger_source": "api"}) or "")
+def _action_registry() -> ActionRegistry:
+    return ActionRegistry(ROOT)
+
+
+def _clipboard_store() -> ClipboardStore:
+    return ClipboardStore.from_config(ROOT, _read_json(SETTINGS_FILES["config"]).get("clipboard", {}))
+
+
+def _action_payload(req: ActionRequest, trigger_source: str = "api") -> dict[str, Any]:
+    text = req.text or req.selection or req.clipboard or ""
+    return {
+        "selection": req.selection if req.selection is not None else text,
+        "clipboard": req.clipboard if req.clipboard is not None else text,
+        "text": text,
+        "trigger_source": trigger_source,
+    }
 
 
 @app.get("/")
@@ -125,37 +140,66 @@ async def save_settings(name: str, request: Request) -> JSONResponse:
 @app.post("/api/rewrite")
 def rewrite(req: RewriteRequest) -> JSONResponse:
     actions = {
-        "Clean Dictation": "08_actions/02_clean_dictation.py",
-        "Compress": "08_actions/12_compress.py",
-        "Rephrase x5": "08_actions/05_rephrase_5_ways.py",
-        "Fix Grammar": "08_actions/04_grammar_fix.py",
+        "Clean Dictation": "clean_dictation",
+        "Compress": "compress",
+        "Rephrase x5": "rephrase_5_ways",
+        "Fix Grammar": "grammar_fix",
     }
-    entry = actions.get(req.action)
-    if entry is None:
+    action_id = actions.get(req.action)
+    if action_id is None:
         raise HTTPException(status_code=404, detail=f"Unknown rewrite action: {req.action}")
-    return JSONResponse({"ok": True, "result": _run_action(entry, req.text)})
+    result = _action_registry().run(
+        action_id,
+        {"selection": req.text, "clipboard": req.text, "text": req.text, "trigger_source": "api/rewrite"},
+    )
+    if not result.ok:
+        raise HTTPException(status_code=500, detail=result.error)
+    return JSONResponse({"ok": True, "result": result.output})
 
+
+@app.get("/api/popup-actions")
+def popup_actions() -> JSONResponse:
+    actions = [
+        {
+            "id": record.id,
+            "name": record.name,
+            "entry": str(record.entry.relative_to(ROOT)),
+            "description": record.description,
+        }
+        for record in _action_registry().list_actions()
+    ]
+    return JSONResponse({"ok": True, "actions": actions})
+
+
+@app.post("/api/action/{action_id}")
+def run_popup_action(action_id: str, req: ActionRequest) -> JSONResponse:
+    result = _action_registry().run(action_id, _action_payload(req, "api/action"))
+    status = 200 if result.ok else 404 if result.error and "Unknown action" in result.error else 500
+    return JSONResponse(
+        {"ok": result.ok, "action_id": action_id, "result": result.output, "error": result.error},
+        status_code=status,
+    )
+
+
+@app.get("/api/clips/ranked")
+def ranked_clips() -> JSONResponse:
+    slots = _clipboard_store().ranked_slots()
+    return JSONResponse({"ok": True, "clips": slots})
 
 @app.get("/api/action/chi_classify")
 def chi_classify_text(text: str) -> JSONResponse:
-    """Quick chi channel classification of text."""
+    """Compatibility endpoint for quick chi channel classification."""
+    result = _action_registry().run(
+        "chi_classify",
+        {"selection": text, "clipboard": text, "text": text, "trigger_source": "api/action/chi_classify"},
+    )
+    if not result.ok:
+        return JSONResponse({"ok": False, "error": result.error}, status_code=500)
     try:
-        sys.path.insert(0, str(ROOT / "08_actions"))
-        spec = importlib.util.spec_from_file_location(
-            "chi_classify", ROOT / "08_actions" / "13_chi_classify.py"
-        )
-        if spec is None or spec.loader is None:
-            raise RuntimeError("Cannot import 13_chi_classify.py")
-        mod = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(mod)
-        classifier = getattr(mod, "classify", None)
-        if not callable(classifier):
-            raise RuntimeError("13_chi_classify.py does not expose classify(text)")
-        result = classifier(text)
-        return JSONResponse({"ok": True, "result": result})
-    except Exception as e:
-        return JSONResponse({"ok": False, "error": str(e)}, status_code=500)
-
+        payload = ast.literal_eval(result.output)
+    except (ValueError, SyntaxError):
+        payload = result.output
+    return JSONResponse({"ok": True, "result": payload})
 
 @app.post("/api/tts")
 def synthesize(req: TTSRequest) -> Response:
