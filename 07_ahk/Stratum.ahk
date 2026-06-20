@@ -12,6 +12,12 @@ Cli := RepoRoot "\00_app_shell\stratum_cli.py"
 
 ; Open or focus the shell on a specific panel. The Python side runs a single
 ; instance, so repeat presses reuse the same window and just switch panels.
+OpenPanel(panel := "dashboard") {
+    if (panel = "prompt")
+        panel := "prompts"
+    RunGui(panel)
+}
+
 RunGui(panel := "dashboard") {
     global Pythonw, Cli, RepoRoot
     Run('"' Pythonw '" "' Cli '" gui ' panel, RepoRoot)
@@ -48,3 +54,15 @@ CaptureSelectionToClipboard() {
 ^!t::RunGui("tts")
 ^Space::RunRewrite()
 MButton::RunPopup()
+
+:*:/claude::
+{
+    Send "{Backspace 7}"
+    OpenPanel("prompt")
+}
+
+:*:/prompt::
+{
+    Send "{Backspace 7}"
+    OpenPanel("prompt")
+}

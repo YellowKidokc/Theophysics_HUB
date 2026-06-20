@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><title>Theophysics Settings</title><style>.mod{padding:.55rem .8rem;margin:.25rem;border:1px solid #777;border-radius:8px;background:#111;color:#eee}.mod.on{background:#3b82f6;border-color:#93c5fd}.panel{font-family:system-ui;margin:2rem}</style></head>
+<body><main class="panel"><h1>Settings</h1><p>Hotkeys tab</p><div id="editor"></div><button id="saveBtn">Save</button><pre id="status"></pre></main>
+<script>
+const API='http://192.168.1.76:3456';
+let store={hotkeys:[{key:'Example',mods:{Ctrl:false,Alt:false,Shift:false,Win:false,CapsLock:false}}]};
+let sel=0;
+let curMods={Ctrl:false,Alt:false,Shift:false,Win:false,CapsLock:false};
+function syncMods(item){curMods={Ctrl:false,Alt:false,Shift:false,Win:false,CapsLock:false,...(item?.mods||{})};}
+function modBtn(key,label,mods){return `<button class="mod ${mods?.[key]?'on':''}" onclick="toggleMod('${key}')" aria-pressed="${!!mods?.[key]}">${label}</button>`;}
+function renderShortcutEditor(item){const mods=curMods;return `<h2>Shortcut Editor</h2>${['Ctrl','Alt','Shift','Win','CapsLock'].map(k=>modBtn(k,k,mods)).join('')}`;}
+function renderHotkeyEditor(item){const mods=curMods;return `<h2>Hotkey Editor</h2>${['Ctrl','Alt','Shift','Win','CapsLock'].map(k=>modBtn(k,k,mods)).join('')}`;}
+function renderEditor(){const item=store.hotkeys[sel];document.getElementById('editor').innerHTML=renderHotkeyEditor(item)+renderShortcutEditor(item);}
+function toggleMod(key){curMods[key]=!curMods[key];renderEditor();}
+function selItem(i){sel=i;syncMods(store.hotkeys[sel]);renderEditor();}
+function clearSel(){sel=-1;curMods={Ctrl:false,Alt:false,Shift:false,Win:false,CapsLock:false};renderEditor();}
+async function save(){const item=store.hotkeys[sel]||{};item.mods={...curMods};store.hotkeys[sel]=item;const res=await fetch(`${API}/api/settings/hotkeys`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(store.hotkeys)});document.getElementById('status').textContent=JSON.stringify(await res.json(),null,2);}
+document.getElementById('saveBtn').addEventListener('click',save);selItem(0);
+</script></body></html>

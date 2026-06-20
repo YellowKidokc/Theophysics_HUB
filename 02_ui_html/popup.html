@@ -1,0 +1,15 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>Theophysics Popup</title><style>body{font-family:system-ui;background:#111827;color:#f9fafb;margin:1rem}.context{width:100%;height:9rem}.actions button,.copy{display:block;width:100%;margin:.35rem 0;padding:.7rem;border-radius:8px;border:1px solid #4b5563;background:#1f2937;color:#fff}.actions button.selected{background:#2563eb}.status{min-height:1.5rem;color:#93c5fd}</style></head>
+<body><h1>CONTEXT</h1><textarea id="context" class="context"></textarea><section id="actions" class="actions"></section><button id="copyClose" class="copy">Copy & Close</button><pre id="status" class="status"></pre>
+<script>
+const API='http://192.168.1.76:3456';
+const builtIns=['Clean Dictation','Compress','Rephrase x5','Fix Grammar','Chi Classify'];
+let contextText='', selected=0, lastResult='';
+async function init(){try{const r=await fetch(`${API}/api/clipboard/current`);const j=await r.json();contextText=j.text||'';}catch{contextText='';}document.getElementById('context').value=contextText;renderActions();}
+function renderActions(){const box=document.getElementById('actions');box.innerHTML='';builtIns.forEach((name,i)=>{const b=document.createElement('button');b.textContent=name;b.className=i===selected?'selected':'';b.onclick=()=>{selected=i;renderActions();runSelected();};box.appendChild(b);});}
+async function copyText(text){await navigator.clipboard.writeText(text);lastResult=text;document.getElementById('status').textContent='Copied.';}
+async function runSelected(){const action=builtIns[selected];contextText=document.getElementById('context').value;if(!contextText.trim()){document.getElementById('status').textContent='No context text.';return;}document.getElementById('status').textContent=`Running ${action}...`;try{let result;if(action==='Chi Classify'){const r=await fetch(`${API}/api/action/chi_classify?text=${encodeURIComponent(contextText)}`);const j=await r.json();if(!j.ok)throw new Error(j.error||'Chi classify failed');result=typeof j.result==='string'?j.result:JSON.stringify(j.result,null,2);}else{const r=await fetch(`${API}/api/rewrite`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text:contextText,action})});const j=await r.json();if(!j.ok)throw new Error(j.detail||j.error||'Rewrite failed');result=j.result;}await copyText(result);window.close();}catch(e){document.getElementById('status').textContent=e.message;}}
+document.getElementById('copyClose').onclick=async()=>{await copyText(lastResult||document.getElementById('context').value);window.close();};
+document.addEventListener('keydown',e=>{if(e.key==='Escape')window.close();if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();runSelected();}if(e.key==='ArrowDown'){selected=(selected+1)%builtIns.length;renderActions();}if(e.key==='ArrowUp'){selected=(selected+builtIns.length-1)%builtIns.length;renderActions();}});
+init();
+</script></body></html>
