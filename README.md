@@ -10,7 +10,7 @@ presents panels for clipboard slots, prompts, links, and text-to-speech.
 | --- | --- |
 | `00_app_shell` | Startup, lifecycle, and the `stratum_cli` command bridge AHK shells out to |
 | `01_core` | Backend domain logic: config, registries, action runner, clipboard store, TTS, logging |
-| `02_ui_react` | Future React frontend (not yet wired into the running app) |
+| `02_ui_react` | Buildable React dashboard/action browser for a future embedded frontend |
 | `03_ui_python` | PySide6 shell window, panels, action popup, tray, single-instance routing |
 | `04_config` | Source-of-truth JSON config (actions, prompts, links, hotkeys, providers) |
 | `05_logs` | `app.log`, `actions.log`, and the persisted clipboard slot store |
@@ -104,7 +104,8 @@ All behavior is config-driven from `04_config`:
 
 **Still to refine**
 
-- React frontend host (`02_ui_react`, `webview_window.py`) is intentionally stubbed.
+- React action execution bridge is not wired yet; the buildable frontend remains a preview/static artifact until embedded.
 - Per-slot clipboard hotkeys and richer slot metadata.
 - Packaging/auto-start (`bootstrapper.py` writes a marker, not a real shortcut yet).
 - Engine links in `06_engines` are documented paths, created on demand.
+- Optional React webview host requires Qt WebEngine support and `npm run build` in `02_ui_react`.
